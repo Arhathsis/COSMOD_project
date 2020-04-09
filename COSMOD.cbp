@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="COSMOD" />
+		<Option pch_mode="2" />
+		<Option compiler="g95" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/GRBurst" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="g95" />
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/GRBurst" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="g95" />
+			</Target>
+		</Build>
+		<Unit filename="COSMOD_Citadel.f95">
+			<Option weight="4" />
+		</Unit>
+		<Unit filename="COSMOD_Config.f95">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="COSMOD_Graphics.f95">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="COSMOD_Paths.f95">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="COSMOD_Scripts.f95">
+			<Option weight="3" />
+		</Unit>
+		<Unit filename="Cosmology.f95">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="GNUplot.f95">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="global.f95">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="main.f95">
+			<Option weight="5" />
+		</Unit>
+		<Unit filename="math.f95">
+			<Option weight="1" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

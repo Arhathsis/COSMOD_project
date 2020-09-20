@@ -6,30 +6,26 @@
 
          use COSMOD_paths
          use COSMOD_graphics
+         use COSMOD_tables
          use COSMOD_scripts
+
+      character(len) :: OS
 
       contains
 
 
 
-         subroutine caption_MN_info
-
-            open(unit_1,file=MN_info,status='replace')
-               write(unit_1,*) 'Anyone with this link can edit this project'
-               write(unit_1,*) 'https://www.overleaf.com/9181497425tkqhjdzzmbgg'
-               write(unit_1,*) 'Anyone with this link can view this project'
-               write(unit_1,*) 'https://www.overleaf.com/read/jjrmkfbhhftv'
-               close(unit_1)
-
-            end subroutine caption_MN_info
-
 
 
          subroutine preparation
 
+            call define_system
+               if (operation_system==1) OS = 'Windows'
+                  write(*,*) 'OS: ',trim(OS)
             call paths
+            call gen_folders
 
-            write(*,*) 'COSMOD citadel is runned..'
+            write(*,*) 'COSMOD citadel is run..'
 
             end subroutine
 
@@ -46,6 +42,15 @@
                   case ('overleaf') ; call make_overleaf_figures_folder
                      case ('o') ; call make_overleaf_figures_folder
 
+                  case ('cosmod')
+                     call COSMOD_model_set
+                     case ('c')
+                        call COSMOD_model_set
+
+                  case ('fig1') ; call MN_Letter_plot_fig1
+
+                  case ('tab1') ; call MN_Letter_plot_tab1
+
                   case ('exit') ; exit
 
                   case default ; write(*,*) 'unknown command'
@@ -56,15 +61,6 @@
 
             end subroutine
 
-
-
-         subroutine make_overleaf_figures_folder
-
-            call system('echo off && MD ' // trim(overleaf) // ' >> log.log ' )
-
-            call caption_MN_info
-
-            end subroutine
 
 
 

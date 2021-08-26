@@ -22,11 +22,11 @@ The COSMOD creates work directory in parallel folder of the code directory (vari
 Additional paths can be written in COSMOD_paths, including catalogue directories.
 Special algorithm parameters are shown in COSMOD_Config.
 The COSMOD use the special modules, such as:
-Cosmology -- cosmological models
-global -- global variables and supporting functions
-GNUplot -- the fortran--GNUplot interracting for plotting graphics
-main -- the main of COSMOD
-math -- some mathematical functions
+Cosmology -- cosmological models;
+global -- global variables and supporting functions;
+GNUplot -- the fortran--GNUplot interracting for plotting graphics;
+main -- the main of COSMOD;
+math -- some mathematical functions.
 
 You can ask me any questions via arhath.sis@gmail.com && arhath.sis@yandex.ru .
 

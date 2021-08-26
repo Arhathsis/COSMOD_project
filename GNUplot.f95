@@ -7,14 +7,16 @@
 !=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- truncated=136-=1
 		integer, parameter	::	N_GNUfields = 200
 
-      integer :: ls1=1, ls2=2, ls3=3, ls4=4, ls5=5, title=7,xlabel=9,xrange=10,mxtics=11,format_x=12, &
+      integer :: ls1=1, ls2=2, ls3=3, ls4=4, ls5=5, title=6,xlabel=9,xrange=10,mxtics=11,format_x=12, &
 			ylabel=14,yrange=15,mytics=16,format_y=17,grid=19,logscale=20,add1=23,add2=24,add3=25, add4=26, add5=27, add6=28, &
 			extention_out_figure=29,legend=31,plot1=33,title1=34,plot2=35,title2=36,plot3=37,title3=38,plot4=39,title4=40, &
 			plot5=41,title5=42,plot6=43,title6=44,plot7=45,title7=46,plot8=47,title8=48,plot9=49,title9=50,plot10=51,title10=52, &
 			plot11=53,title11=54,plot12=55,title12=56,plot13=57,title13=58,plot14=59,title14=60,set_parametric=22, &
 			thickness , comma_fix , dash_type
 
-		character(len) ::	pngterm  = 'set term pngcairo enhanced font "Verdana,10" size 850, 630'				, &
+      real(8) :: external_parameter = 0
+
+		character(len) ::	pngterm  = 'set term pngcairo enhanced font "Verdana,12" size 1400, 1050'				, &
 								epsterm  = 'set term postscript enhanced color font "Verdana,14" size 8.5, 6.3'	, &
 								scriptpath  = '', figurepath  = '',	figoutput  = '', GNUdatafile = '', graph_name='', &
 								fig_dir = '', GNUplots = '', GNUscripts = '', script_file_path='', plot_dir='', &
@@ -34,7 +36,7 @@
 !		' set ylabel "y"                                  # 14 y-axis label       ', &
 !		' set yrange [0:1]                                # 15                    ', &
 !		' set mytics 5                                    # 16                    ', &
-!		' set format y "10^{%L}"                          # 17                    ', &
+!		' set format y "%2.0t{/Symbol \327}10^{%L}"       # 17                    ', &
 !		'                                                                         ', &
 !		' set grid xtics ytics mxtics mytics              # 19                    ', &
 !		' set logscale                                    # 20                    ', &
@@ -64,28 +66,24 @@
 
                   unit_2 = random_unit()
 
-                  select case (operation_system)
+                  select case (operating_system)
                      case(1)  !=- Windows
                         datafile    = backslashfix(datafile)
                         GNUplots    = 'plots\'
                         GNUscripts  = 'plots\GNUscripts\'
                         plot_dir    = trim(file_path(datafile)) // trim(GNUplots) // trim(name(datafile)) &
                            // '\' // trim(fig_dir)
-                        system_commands(1) = 'MD'
-                        system_commands(2) = 'move'
                      case(2)  !=- Linux
                         datafile    = slashfix(datafile)
                         GNUplots    = 'plots/'
                         GNUscripts  = 'plots/GNUscripts/'
                         plot_dir    = trim(file_path(datafile)) // trim(GNUplots) // trim(name(datafile)) &
                            // '/' // trim(fig_dir)
-                        system_commands(1) = 'mkdir -p'
-                        system_commands(2) = 'mv'
                      end select
 
-                  call system( trim(system_commands(1)) // ' ' // trim(file_path(datafile)) // &
-                     trim(GNUscripts) // ' >> log.log ' )
-                  call system( trim(system_commands(1)) // ' ' //  trim(plot_dir) // ' >> log.log ' )
+                  output = trim(file_path(datafile)) // trim(GNUscripts)
+                  call create_folder( output )
+                  call create_folder( plot_dir )
 
                   figoutput = trim(file_path(datafile)) // trim(GNUscripts) // trim(name(datafile)) // &
                      '_' // trim(graph_name)
@@ -109,12 +107,13 @@
                         write(unit_2,'(A)') trim(GNUfields(i))
                         enddo
 						!write(9,*) 'plot "<echo -1 10**'//trim(realtostr(GNUnorm))//'" w p ls 10 notitle \'
-						write(unit_2,*) 'plot ',( trim(GNUfields(i)) , i = plot1 , N_GNUfields )
+
+						write(unit_2,*) ( trim(GNUfields(i)) , i = plot1 , N_GNUfields )
 
 						close(unit_2)
 
-					call system( 'gnuplot ' // trim(script_file_path) // ' && ' // trim(system_commands(2)) &
-                  // ' ' // trim(figoutput) // ' ' // trim(plot_dir) )
+					call system( 'gnuplot ' // trim(script_file_path) // ' >> log.log ' )
+               call move_file( figoutput , plot_dir )
 
 					graph_name=''
 
@@ -136,6 +135,13 @@
 
 
       subroutine GNUfields_fix
+         character(len) plot
+
+               read(GNUfields(plot1),*) plot
+            if ( plot/='plot' .and. plot/='splot' ) GNUfields(plot1) = 'plot ' // trim(GNUfields(plot1))
+
+            if (GNUfields(extention_out_figure)(1:1)/='#') &
+               GNUfields(extention_out_figure) = '#' // trim(GNUfields(extention_out_figure))
 
             if ( .not. GNUcorrect( GNUfields( title ) ) ) &
                GNUfields( title ) = 'set title "' // trim(GNUfields( title )) // '"'
@@ -184,8 +190,10 @@
 
          GNUfields( : ) = ''  !=- default
          fig_dir  = ''
-         pngterm  = 'set term pngcairo enhanced font "Verdana,10" size 850, 630' !=- default
+         pngterm  = 'set term pngcairo enhanced font "Verdana,16" size 1400, 1050'
          epsterm  = 'set term postscript enhanced color font "Verdana,14" size 8.5, 6.3'
+
+         !=- Verdana , Palatino-Roman
 
          end subroutine
 

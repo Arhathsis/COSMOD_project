@@ -5,24 +5,27 @@
 	module global
 		implicit none
 
-      integer ::  operation_system  =  0   !=- 1 Windows, 2 Linux
+      integer ::  operating_system  =  0   !=- 1 Windows, 2 Linux
 
-      logical :: file_exists
+      logical :: file_exists , index_info , write_percent_fix , all_error_reporst = .false.
 
 		integer,parameter :: len=256,  N_col_GRB = 90, N_GRB=7d3, & !=- constants
-			N_titles = 57, N_comparisons = 4, N_files = 20, N_folders = 10 !=- 3+6*N_models
+			N_titles = 57, N_comparisons = 4, N_files = 20, N_folders = 100, & !=- 3+6*N_models
+			N_commands = 10
 
 		integer ::  i,ii,iii,j,jj,jjj,k,kk,kkk,n,nn,nnn,m,mm,mmm, &
                   unit_1 = 1, unit_2 = 2, unit_3 = 3 , unit_4 = 4 , unit_5 = 5 , unit_6 = 6  , unit_7 = 7 , &
-                  counter , final_counter
+                  counter , final_counter , iostat_value , i_percent , N_percent , mod_percent = 10 , m_percent
 
 		character(len) :: theformat='', theformat2='', datafile='', titles(N_titles)='', &
                         input='', output='', line='',preformat='',path='',head_format='', &
                         text1='',text2='',text3='',text4='',text5='', command='',figure_number='', &
-                        files(N_files)='',new_files(N_files)='', folders(N_folders), &
-                        system_commands(10)
+                        files(N_files)='NaN',new_files(N_files)='NaN', folders(N_folders) = 'NaN', &
+                        system_commands(10), filepath='', columns, filename='', commandN(N_commands)
 
-		real(8) a,b,bbb,d,e,g,l,t,tx,ty,nx,ny,aa,bb,vva,vvb,q,p,sa,sb,ssa,ssb,sm, &
+      real(8),parameter :: NaN = 1d150
+
+		real(8) a,b,bbb,d,e,g,l,t,tx,ty,nx,ny,aa,bb,vva,vvb,q,p,sa,sb,ssa,ssb,sm, lb,rb, &
 			x,xx,xxx, y,yy,yyy, z,zz,zzz, w,ww,www, v,vv,vvv,r, maximum, &
 			alpha,beta,p1,p2,p3,p4,p5,sumx,sumx2,sumy,sumxy , &
 			z_max_var, log_z, GRB_shift , &
@@ -38,20 +41,36 @@
 
             call system(' echo %OS% > system.log')
                line = read_last_string('system.log')
-               if ( line == 'Windows_NT' ) operation_system = 1
+               if ( line == 'Windows_NT' ) operating_system = 1
 
             call system(' echo $SHELL  >> system.log')
                line = read_last_string('system.log')
-               if ( line == '/bin/bash'  ) operation_system = 2
+               if ( line == '/bin/bash'  ) operating_system = 2
 
+            select case (operating_system)
+               case(1)  !=-   Windows
+                  write(*,*) 'OS: Windows_NT'
+                  call sleep (1)
+                  call system('cls')
+               case(2)  !=-   Linux
+                  write(*,*) 'OS: Linux'
+                  call sleep (1)
+                  !call system('clear')
+               case default   !=-   Other
+                  write(*,*) 'define_system: wrong mask'
+                  call sleep (10) ; operating_system = 1
+               end select
             end subroutine define_system
 
 
 
          integer function random_unit()
             real(8) x
-               call random_number(x)
-               random_unit = int(1d3*x)
+               do
+                  call random_number(x)
+                  random_unit = int(1d3*x)
+                  if (random_unit>1d2) exit
+                  enddo
             end function
 
 
@@ -68,9 +87,30 @@
 
 
 
+         subroutine prepare_percent( N_max )
+            integer N_max
+            i_percent=0 ; N_percent = N_max ; call CPU_TIME(start_time) ; m_percent=0
+            end subroutine prepare_percent
+
+
+
+         subroutine write_percent   !=- before a cycle set `call prepare_percent( N_max )`
+               i_percent = 1+i_percent
+               a = 1d2*i_percent/N_percent
+               if ( int(a)>m_percent .and. int(a)>0 .and. (mod(int(a),mod_percent) == 0 .or. int(a) == 1 .or. int(a) == 99) ) then
+                  m_percent=int(a)
+                     call CPU_TIME(final_time)
+                  b = final_time - start_time
+         write(*,'(6x,"complited",i4,"%, work time is",F10.2,"s, time left is",F10.2,"s, processed points are",i10," from",i10)') &
+                     int(a),b,b/int(a)*1d2-b, i_percent,N_percent
+                  endif
+            end subroutine write_percent
+
+
+
          character(len) function make_workdir()
 
-            select case (operation_system)
+            select case (operating_system)
                case(1)  !=-   Windows
 
                   call system( 'echo %cd% > log.log' )
@@ -92,20 +132,36 @@
 
 
          character(len) function name(path)
-            character(len) path; call file_name(path,ii,jj); name=''; name=path(ii:jj)
+            character(len) path; integer ii,jj
+               call file_name(path,ii,jj); name=''; name=path(ii:jj)
+            end function
+
+         character(len) function name_ext(path)
+            character(len) path; integer ii,jj
+               call file_name(path,ii,jj); name_ext=''; name_ext=path(ii:len)
             end function
 
 			subroutine file_name(path,l1,l2) !-=- file path excision
-				character(len) path ; integer i,l1,l2
+				character(len) path ; integer i,l1,l2 ; l1=1 ; l2=len
 					do i=len,1,-1 ; if (path(i:i)=='.') then ; l2=i-1 ; exit ; endif ; enddo
 					do i=len,1,-1 ; if (path(i:i)=='\'.or.path(i:i)=='/') then ; l1=i+1 ; exit ; endif ; enddo
 				end subroutine file_name
 
 			character(len) function file_path(path) !-=- file name excision
-            integer i
-				character(len) path ; integer l1,l2
-					do i=len,1,-1 ; if (path(i:i)=='\'.or.path(i:i)=='/') then ; l1=i ; exit ; endif ; enddo
-               file_path='' ; file_path = path(1:l1)
+				character(len) path ; integer l1,l2,i
+					file_path = path ; l2=len
+					do i=len,1,-1
+                  if (path(i:i)=='\'.or.path(i:i)=='/') then
+                     l2=i
+                     file_path = path(1:l2)
+                     !write(*,*) l1, trim(file_path)
+                     exit
+                     endif
+                  enddo
+                  !call file_name(path,l1,l2)
+                  !write(*,*) l1 , l2 , (l2==len) , trim(path) , ' ' , trim(name(path))
+               if (l2==len) file_path = '' ! trim(name(path))
+                  !write(*,*) l1 , l2 , (l2==len) , trim(file_path) , ' ' , trim(name(file_path))
 				end function
 
 			character(len) function inttostr(integer_number) !=- Convert an integer to string
@@ -137,8 +193,10 @@
 				end function realtostrff
 
 			integer function file_volume(file_path)
-				character(len) file_path ; file_volume=0
-               unit_4 = random_unit()
+				character(len) file_path
+				integer unit_4
+
+               unit_4 = random_unit() ; file_volume=0
 
                inquire( file = file_path , exist = file_exists )
 					if ( file_exists ) then
@@ -159,7 +217,10 @@
             integer i
 				character(len) line ; character(1) symbol ; symbol_search = .false.
 					do i=1,len
-						if (line(i:i)==symbol) symbol_search = .true.
+						if (line(i:i)==symbol) then
+                     symbol_search = .true.
+                     exit
+                     endif
 						end do
 				end function
 
@@ -169,22 +230,76 @@
                if (word==goal) word_search = .true.
 				end function
 
+			logical function word_search_array(array,goal)   !=- of only the first word - ?
+				character(len) word,array(:) ; character(*) goal ; integer i
+               word_search_array = .false.
+               do i=1,size(array)
+                  read(array(i),*) word
+                  if (word==goal) word_search_array = .true.
+                  enddo
+				end function
+
 
 
          subroutine shell_MD_Tree
+            integer i
                do i=1,size(folders(:))
-                  select case (operation_system)
-                     case(1)  !=-   Windows
-                        folders(i) = backslashfix(folders(i))
-                        if (folders(i).ne.'') call system( 'MD ' // trim(folders(i)) )
-                     case(2)  !=-   Linux
-                        folders(i) = slashfix(folders(i))
-                        if (folders(i).ne.'') call system( 'mkdir -p ' // trim(folders(i)) )
-                  end select
+                  if (folders(i).ne.'') call create_folder(folders(i))
                   enddo
             end subroutine shell_MD_Tree
 
 
+
+         subroutine move_file(whence,here)
+            character(len) whence , here
+               select case (operating_system)
+                  case(1)  !=-   Windows
+                     whence = backslashfix(whence)
+                       here = backslashfix(here)
+                     if ( whence.ne.'' .and. here.ne.'' .and. whence.ne.'NaN' .and. here.ne.'NaN' ) &
+                        call system( 'move ' // trim(whence) // ' ' // trim(here)  // ' >> log.log ' )
+                  case(2)  !=-   Linux
+                     whence = slashfix(whence)
+                       here = slashfix(here)
+                     if ( whence.ne.'' .and. here.ne.'' .and. whence.ne.'NaN' .and. here.ne.'NaN' ) &
+                        call system( 'mv ' // trim(whence) // ' ' // trim(here)  // ' >> log.log ' )
+                  end select
+            end subroutine
+
+
+         subroutine copy_file(whence,here)
+            character(len) whence , here
+               select case (operating_system)
+                  case(1)  !=-   Windows
+                     whence = backslashfix(whence)
+                       here = backslashfix(here)
+                     if ( whence.ne.'' .and. here.ne.'' .and. whence.ne.'NaN' .and. here.ne.'NaN' ) &
+                        call system( 'copy ' // trim(whence) // ' ' // trim(here)  // ' >> log.log ' )
+                  case(2)  !=-   Linux
+                     whence = slashfix(whence)
+                       here = slashfix(here)
+                     if ( whence.ne.'' .and. here.ne.'' .and. whence.ne.'NaN' .and. here.ne.'NaN' ) &
+                     call system( 'cp ' // trim(whence) // ' ' // trim(here)  // ' >> log.log ' )
+                  end select
+            end subroutine
+
+
+         subroutine create_folder(path_folder)
+            character(len) path_folder
+               select case (operating_system)
+                  case(1)  !=-   Windows
+                     path_folder = backslashfix(path_folder)
+                     if (path_folder.ne.'NaN' .and. path_folder.ne.'') &
+                        call system( 'If Not Exist ' // trim(path_folder) // &
+                        ' MD ' // trim(path_folder)  // ' >> log.log ' )
+                  case(2)  !=-   Linux
+                     path_folder = slashfix(path_folder)
+                     if (path_folder.ne.'NaN' .and. path_folder.ne.'') &
+                        call system( 'mkdir -p ' // trim(path_folder)  // ' >> log.log ' )
+                  end select
+            end subroutine
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
 			character(len) function slashfix(path)
             integer i
@@ -192,13 +307,37 @@
 					do i=len,1,-1 ; if (path(i:i)=='\') slashfix(i:i)='/' ; enddo
 				end function
 
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
+
 			character(len) function backslashfix(path)
             integer i
 				character(len) path; backslashfix = ''; backslashfix = path
 					do i=len,1,-1 ; if (path(i:i)=='/') backslashfix(i:i)='\' ; enddo
 				end function
 
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
+         integer function count_noNaN(array)
+            real(8) array(:)
+               count_noNaN = 0
+               do i=1,size(array)
+                  if ( array(i) .ne. NaN ) count_noNaN = 1 + count_noNaN
+                  enddo
+                  if ( count_noNaN==0 .and. all_error_reporst ) write(*,*) 'count_noNaN: 0'
+            end function count_noNaN
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
+
+         integer function count_noNaN_text(array)
+            character(len) array(:)
+               count_noNaN_text = 0
+               do i=1,size(array)
+                  if ( array(i) .ne. 'NaN' ) count_noNaN_text = 1 + count_noNaN_text
+                  enddo
+                  if ( count_noNaN_text==0 .and. all_error_reporst ) write(*,*) 'count_noNaN_text: 0'
+            end function count_noNaN_text
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
 		end module
 !=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- truncated=136-=1

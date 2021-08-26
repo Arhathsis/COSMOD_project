@@ -1,191 +1,217 @@
 !=- Fractal Dimension Estimation
 !=- © Stanislav Shirokov, 2014-2020
 
-module COSMOD_scripts
-   use math
-	use GNUplot
-	use cosmology
+   module COSMOD_scripts
+      use math
+      use GNUplot
+      use cosmology
 
-	use COSMOD_config
-	use COSMOD_paths
-	use COSMOD_graphics
-
-
+      use COSMOD_config
+      use COSMOD_paths
+      use COSMOD_graphics
+      use COSMOD_tables
+      use COSMOD_catalogs
+      use COSMOD_overleaf
 
       contains
 
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
-         subroutine MN_Letter_plot_fig1
+         subroutine example
 
-            integer i,j,k,k_max,i_max,j_max , i_min , w , n_model
-               model_set_path = trim(WorkDir) // 'MN_letter_model_set.dat'
+               !=- models table
+               MS_table_name = trim(Models_folder) // 'example.dat'
 
-            !=-   write(*,*) ' the model_set format:'
-            !=-   write(*,*) ' wCDM H_0  w  Omega_v  Omega_k'
-            !=-   write(*,*) ' FF H_0'
-            !=-   write(*,*) ' TL H_0'
+               !=- models parameters
+               MS_model(1)    = 'wCDM'
+               MS_model(2)    = 'FF'
 
-            MS_parameters(1)='0.3'
-            MS_parameters(2)='0.7'
+               MS_Omega_k(1)  = -0.1
+               MS_Omega_k(2)  =  0.0
+               MS_Omega_k(3)  =  0.1
 
-            w_count = 2
-            Omega_v_count = 2
-            Omega_k_count = 3
-               MS_real_model_count = w_count*Omega_k_count*Omega_v_count
+               MS_EoS_w(1)    = -1
+               MS_EoS_w(2)    = -2
 
+               MS_Omega_w(1)  = 0.3
+               MS_Omega_w(2)  = 0.7
 
-            n_model=0
-            do j=1,Omega_v_count
-               do i=1,w_count
-                  w=-i
-                     do k=1,Omega_k_count
-                        MS_O_k = -0.2 + 0.1*k
-            mm=4
-            if (k>1) mm=5
-                        read(MS_parameters(j),*) MS_O_v
-                     MS_O_m_bug = abs ( 1 + MS_O_k - MS_O_v ) !=-   the Friedmann equation
+               !=- calculating cosmological models
+                  MS_recalculating = .true.
+               call make_model_set
 
-                        n_model = n_model + 1
-                     model_set ( n_model , 1 ) = &
-                        ' wCDM  70 ' // trim(inttostr(w)) // ' ' // &
-                        trim(MS_parameters(j)) // ' ' // trim(realtostrf(MS_O_k,4,1))
-                     model_set ( n_model , 2 ) = &
-                        ' wCDM (w = ' // trim(inttostr(w)) //  &
-                        ', {/Symbol W}_{DE}=' // trim(MS_parameters(j)) // &
-                        ', {/Symbol W}_m=' // trim(realtostrf(MS_O_m_bug,4,1)) // &
-                        ', {/Symbol W}_k=' // trim(realtostrf(MS_O_k,mm,1)) // ') '
-                     enddo
-                  enddo
-               enddo
+            end subroutine
 
-               !=- the hand input:
-               !model_set
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
-                  !=-   write(*,'(A)') model_set(:,1) ; pause
+         subroutine mn2021a_fig1
+            integer i
 
-               call compute_model_set
-               call write_model_set
+            Data_catalogs(1) = 'C:\Users\Arhath\YandexDisk\Science\DATA\SN_catalogs\Pantheon.dat'
+
+               columns_for_approx = '6 3 5'
+                  approx_order = 8
+               call approx_polylog(Data_catalogs(1))
+               call plot_mn2021a_fig1(Data_catalogs(1))
+
+            end subroutine
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
+
+         subroutine mn2020b_overleaf
+
+            paper_name        = 'mn2020b'
+
+            overleaf_CanEdit  = 'https://www.overleaf.com/5957249232dfnmwjsjvdng'
+            overleaf_ReadOnly = 'https://www.overleaf.com/read/ybwtxspzsdtb'
+
+                files( 1  ) = 'Models\plots\mn2020b_fig1\mn2020b_fig1_delta_mu(z)_fig1a.eps'
+            new_files( 1  ) = 'Shirokov_fig1a.eps'
+
+                files( 2  ) = 'Models\plots\mn2020b_fig1\mn2020b_fig1_delta_mu(z)_fig1b.eps'
+            new_files( 2  ) = 'Shirokov_fig1b.eps'
+
+               call overleaf_making
+
+            end subroutine
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
+
+         subroutine mn2020b_plot_tab1
+
+               MS_model(1) = 'wCDM'
+               MS_Hubble_0(1) = 70
+
+               MS_Omega_w(1) = 0.3d0
+               MS_Omega_w(2) = 0.5d0
+               MS_Omega_w(3) = 0.7d0
+               MS_Omega_w(4) = 0.9d0
+
+               MS_EoS_w(1) = -2
+
+               MS_Omega_k(1) = -0.1d0
+               MS_Omega_k(2) =  0.0d0
+               MS_Omega_k(3) =  0.1d0
+
+               tab1_z(1 ) = 0.1d0
+               tab1_z(2 ) = 0.2d0
+               tab1_z(3 ) = 0.3d0
+               tab1_z(4 ) = 0.5d0
+               tab1_z(5 ) = 0.6d0
+               tab1_z(6 ) = 0.8d0
+               tab1_z(7 ) = 1.d0
+               tab1_z(8 ) = 2.d0
+               tab1_z(9 ) = 3.d0
+               tab1_z(10) = 4.d0
+               tab1_z(11) = 5.d0
+               tab1_z(12) = 6.d0
+               tab1_z(13) = 8.d0
+               tab1_z(14) = 10.d0
+
+               call mn2020b_tab1
+
+            end subroutine mn2020b_plot_tab1
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
+
+         subroutine mn2020b_plot_fig1
+
+               !=- models table
+               MS_table_name = trim(Models_folder) // 'mn2020b_fig1.dat'
+
+               !=- the second way setting Model_Set parameters
+               !=- models parameters
+               MS_model(1)    = 'wCDM'
+
+               MS_Omega_k(1)  =  0.0   !=- first is LCDM
+               MS_Omega_k(2)  = -0.1
+               MS_Omega_k(3)  =  0.1
+
+               MS_EoS_w(1)    = -1   !=- first is LCDM
+               MS_EoS_w(2)    = -2
+
+               MS_Omega_w(1)  = 0.7   !=- first is LCDM
+               MS_Omega_w(2)  = 0.3
+
+               !=- calculating cosmological models
+                  !=- MS_recalculating = .true.
+               call make_model_set
+
+               !=- plotting figures
                   GRB_medians_flag = .false.
-               call MN_Letter_fig1
+               call mn2020b_fig1
                   GRB_medians_flag = .true.
-               call MN_Letter_fig1
-               !=- call MN_Letter_example
+               call mn2020b_fig1
 
+            end subroutine
 
-            end subroutine MN_Letter_plot_fig1
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
+         subroutine mn2020a_overleaf
 
-         subroutine COSMOD_model_set
-            integer i,j,k,k_max,i_max,j_max , i_min , w , n_model
-               model_set_path = trim(WorkDir) // 'MN_letter_model_set.dat'
+            paper_name        = 'mn2020a'
 
-            !=-   write(*,*) ' the model_set format:'
-            !=-   write(*,*) ' wCDM H_0  w  Omega_v  Omega_k'
-            !=-   write(*,*) ' FF H_0'
-            !=-   write(*,*) ' TL H_0'
+            overleaf_CanEdit  = 'https://www.overleaf.com/9181497425tkqhjdzzmbgg'
+            overleaf_ReadOnly = 'https://www.overleaf.com/read/jjrmkfbhhftv'
 
-            MS_parameters(1)='0.5'
-            MS_parameters(2)='0.7'
-            MS_parameters(3)='0.9'
+                files( 1  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_r(z)-logscale.eps'
+            new_files( 1  ) = 'Shirokov_fig3a.eps'
 
-            w_count = 2
-            Omega_v_count = 3
-            Omega_k_count = 3
-               MS_real_model_count = w_count*Omega_k_count*Omega_v_count - 6
+                files( 2  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_delta_r(z).eps'
+            new_files( 2  ) = 'Shirokov_fig3b.eps'
 
+                files( 3  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_d_L(z)-logscale.eps'
+            new_files( 3  ) = 'Shirokov_fig3c.eps'
 
-            n_model=0
-            do j=1,Omega_v_count
-               if ( j /= 2 ) then
-                  i_max = 1
-                  else
-                     i_max = w_count
-                  endif
-               do i=1,i_max
-                  w=-i
-                  if ( j /= 2 ) w=-2
-                     do k=1,Omega_k_count
-                        MS_O_k = -0.2 + 0.1*k
-            mm=4
-            if (k>1) mm=5
-                        read(MS_parameters(j),*) MS_O_v
-                     MS_O_m_bug = abs ( 1 + MS_O_k - MS_O_v ) !=-   the Friedmann equation
-                        !write(*,*) MS_O_m_bug ; pause
-                        n_model = n_model + 1
-                     model_set ( n_model , 1 ) = &
-                        ' wCDM  70 ' // trim(inttostr(w)) // ' ' // &
-                        trim(MS_parameters(j)) // ' ' // trim(realtostrf(MS_O_k,4,1))
-                     model_set ( n_model , 2 ) = &
-                        ' wCDM (w = ' // trim(inttostr(w)) //  &
-                        ', {/Symbol W}_{DE}=' // trim(MS_parameters(j)) // &
-                        ', {/Symbol W}_m=' // trim(realtostrf(MS_O_m_bug,4,1)) // &
-                        ', {/Symbol W}_k=' // trim(realtostrf(MS_O_k,mm,1)) // ') '
-                     enddo
-                  enddo
-               enddo
+                files( 4  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_delta_d_L(z).eps'
+            new_files( 4  ) = 'Shirokov_fig3d.eps'
 
-               !=- the hand input:
-               !model_set
+                files( 5  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_mu(z)-logscale.eps'
+            new_files( 5  ) = 'Shirokov_fig4a.eps'
 
-                  !=-   write(*,'(A)') model_set(:,1) ; pause
+                files( 6  ) = 'Models\plots\mn2020a_fig3\mn2020a_fig3_delta_mu(z).eps'
+            new_files( 6  ) = 'Shirokov_fig4b.eps'
 
-               call compute_model_set
-               call write_model_set
-               call MN_Letter_example
+               call overleaf_making
 
-            end subroutine COSMOD_model_set
+            end subroutine
 
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
+         subroutine mn2020a_plot_fig3
 
-         subroutine COSMOD_model_set_all
-            integer i,j,k
-               model_set_path = trim(WorkDir) // 'MN_letter_' // model_set_path
+               !=- models table
+               MS_table_name = trim(Models_folder) // 'mn2020a_fig3.dat'
 
             !=-   write(*,*) ' the model_set format:'
             !=-   write(*,*) ' wCDM H_0  w  Omega_v  Omega_k'
             !=-   write(*,*) ' FF H_0'
             !=-   write(*,*) ' TL H_0'
 
-            MS_parameters(1)='0.7'
-            MS_parameters(2)='0.5'
-            MS_parameters(3)='0.9'
+               !=- the first way setting Model_Set parameters
+               model_set ( 1 , 1 ) = ' wCDM  70 -1    0.7   0.0 '
+               model_set ( 1 , 2 ) = ' {/Symbol L}CDM( {/Symbol W}_{/Symbol L} = 0.7 ) '
 
-            do k=1,3
-                  read(MS_parameters(k),*) MS_O_v
-               do i=1,3
-                     MS_O_m_bug = abs ( 1 + 0.0 - MS_O_v ) !=-   the Friedmann equation
-                     !write(*,*) MS_O_m_bug ; pause
-                  model_set ( 1+3*(i-1)+9*(k-1) , 1 ) = ' wCDM  70 ' // trim(inttostr(-i)) // ' ' // &
-                     trim(MS_parameters(k)) // ' 0.0 '
-                  model_set ( 1+3*(i-1)+9*(k-1) , 2 ) = ' the wCDM (w = ' // trim(inttostr(-i)) //  &
-                     ', {/Symbol W}_{/Symbol L}=' // trim(MS_parameters(k)) // &
-                     ', {/Symbol W}_m=' // trim(realtostrf(MS_O_m_bug,3,1)) // &
-                     ', {/Symbol W}_k= 0.0) model '
+               model_set ( 2 , 1 ) = ' wCDM  70 -1    1.0   0.0 '
+               model_set ( 2 , 2 ) = ' {/Symbol L}CDM( {/Symbol W}_{/Symbol L} = 1.0 ), CSS '
 
-                     MS_O_m_bug = abs ( 1 + 0.1 - MS_O_v ) !=-   the Friedmann equation
-                  model_set ( 2+3*(i-1)+9*(k-1) , 1 ) = ' wCDM  70 ' // trim(inttostr(-i)) // ' ' // &
-                     trim(MS_parameters(k)) // ' 0.1 '
-                  model_set ( 2+3*(i-1)+9*(k-1) , 2 ) = ' the wCDM (w = ' // trim(inttostr(-i)) //  &
-                     ', {/Symbol W}_{/Symbol L}=' // trim(MS_parameters(k)) // &
-                     ', {/Symbol W}_m=' // trim(realtostrf(MS_O_m_bug,3,1)) // &
-                     ', {/Symbol W}_k= 0.1) model '
+               model_set ( 3 , 1 ) = ' TL    70 '
+               model_set ( 3 , 2 ) = ' the TL model '
 
-                     MS_O_m_bug = abs ( 1 - 0.1 - MS_O_v ) !=-   the Friedmann equation
-                  model_set ( 3+3*(i-1)+9*(k-1) , 1 ) = ' wCDM  70 ' // trim(inttostr(-i)) // ' ' // &
-                     trim(MS_parameters(k)) // ' -0.1 '
-                  model_set ( 3+3*(i-1)+9*(k-1) , 2 ) = ' the wCDM (w = ' // trim(inttostr(-i)) //  &
-                     ', {/Symbol W}_{/Symbol L}=' // trim(MS_parameters(k)) // &
-                     ', {/Symbol W}_m=' // trim(realtostrf(MS_O_m_bug,3,1)) // &
-                     ', {/Symbol W}_k=-0.1) model '
-                  enddo
-               enddo
+               model_set ( 4 , 1 ) = ' FF    70  '
+               model_set ( 4 , 2 ) = ' the FF model '
 
-               call compute_model_set
-               call write_model_set
-               call MN_Letter_all
+               model_set ( 5 , 1 ) = ' wCDM  70 -1    0.9   0.0 '
+               model_set ( 5 , 2 ) = ' {/Symbol L}CDM( {/Symbol W}_{/Symbol L} = 0.9 ) '
 
-            end subroutine COSMOD_model_set_all
+               model_set ( 6 , 1 ) = ' wCDM  70 -0.5  0.7   0.2 '
+               model_set ( 6 , 2 ) = ' wCDM( w = -0.5, {/Symbol W}_{/Symbol L} = 0.7, {/Symbol W}_k = 0.2 ) '
 
+               call make_model_set
 
+            end subroutine mn2020a_plot_fig3
+
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
 end module COSMOD_scripts
+!=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- truncated=136-=1

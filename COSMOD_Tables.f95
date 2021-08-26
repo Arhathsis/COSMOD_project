@@ -10,84 +10,61 @@
       use COSMOD_config
       use COSMOD_paths
 
-      character(len) :: path_tab1_dat , path_tab1_tex
+      integer,parameter :: range_z = 1d2
 
-      integer,parameter :: range_z = 14 , range_model = 15 , range_omega_v = 5 , range_w = 1 , range_omega_k = 3
+      character(len)    :: path_tab1_dat , path_tab1_tex
 
-      real(8) ::  tab1_mu(range_z,1+range_model) , &
-                  value_omega_v(range_omega_v) , &
-                  value_w(range_w) , &
-                  value_omega_k(range_omega_k) , &
+      real(8)           :: tab1_z(range_z) = NaN
 
-                  mu_LCDM
+      real(8),allocatable,dimension(:,:) :: tab1_mu
 
       contains
 
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
+         subroutine mn2020b_tab1
+            integer z,w,v,k, model , count_z
+            real(8) mu_LCDM
 
-         subroutine MN_Letter_plot_tab1
-            integer w,v,k
+               call cheking_MS_parameters
+                  MS_real_model_count = MS_count_w * MS_count_O_w * MS_count_O_k
 
-               path_tab1_dat = trim(path_tabs) // 'MN_Letter_tab1.dat'
-               path_tab1_tex = trim(path_tabs) // 'MN_Letter_tab1.tex'
+               count_z = count_noNaN(tab1_z)
 
-               value_omega_v(1) = 0.9d0
-               value_omega_v(2) = 0.7d0
-               value_omega_v(3) = 0.5d0
-               value_omega_v(4) = 0.3d0
-               value_omega_v(5) = 0.1d0
+            allocate(tab1_mu(count_z,1+MS_real_model_count))
 
-               value_w(1) = -2
+               path_tab1_dat = trim(Tables_folder) // 'mn2020b_tab1.dat'
+               path_tab1_tex = trim(Tables_folder) // 'mn2020b_tab1.tex'
 
-               value_omega_k(1) = -0.1d0
-               value_omega_k(2) =  0.0d0
-               value_omega_k(3) =  0.1d0
+               tab1_mu(:,1) = tab1_z(:)
+               do z=1,count_z
 
-               tab1_mu(1 ,1) = 0.1d0
-               tab1_mu(2 ,1) = 0.2d0
-               tab1_mu(3 ,1) = 0.3d0
-               tab1_mu(4 ,1) = 0.5d0
-               tab1_mu(5 ,1) = 0.6d0
-               tab1_mu(6 ,1) = 0.8d0
-               tab1_mu(7 ,1) = 1.d0
-               tab1_mu(8 ,1) = 2.d0
-               tab1_mu(9 ,1) = 3.d0
-               tab1_mu(10,1) = 4.d0
-               tab1_mu(11,1) = 5.d0
-               tab1_mu(12,1) = 6.d0
-               tab1_mu(13,1) = 8.d0
-               tab1_mu(14,1) = 10.d0
+                  mu_LCDM = dm_wCDM( tab1_mu(z,1) , 7d1 , -1d0 , 0.3d0 , 0d0 )
 
-               do i=1,range_z
-                  mu_LCDM = dm_wCDM( tab1_mu(i,1) , 7d1 , -1d0 , 0.3d0 , 0d0 )
-                  do w=1,range_w
-                     do v=1,range_omega_v
-                        do k=1,range_omega_k
+                  do w=1,MS_count_w
+                     do v=1,MS_count_O_w
+                        do k=1,MS_count_O_k
 
-                           j = 1 + k + range_omega_k*(v-1) + range_omega_k*range_omega_v*(w-1)
+                           model = 1 + k + MS_count_O_k*(v-1) + MS_count_O_k*MS_count_O_w*(w-1)
 
-                           tab1_mu(i,j) = dm_wCDM( tab1_mu(i,1) , 7d1 , value_w(w) , &
-                              1 + value_omega_k(k) - value_omega_v(v) , value_omega_k(k)) - mu_LCDM
-   write(*,*) tab1_mu(i,1) , mu_LCDM , tab1_mu(i,j) , value_w(w) , &
-                              1 + value_omega_k(k) - value_omega_v(v) , value_omega_k(k) , &
-                              dm_wCDM( tab1_mu(i,1) , 7d1 , value_w(w) , &
-                              1 + value_omega_k(k) - value_omega_v(v) , value_omega_k(k))
+                           tab1_mu( z , model ) = dm_wCDM( tab1_mu(z,1) , 7d1 , MS_EoS_w(w) , &
+                              1 + MS_Omega_k(k) - MS_Omega_w(v) , MS_Omega_k(k)) - mu_LCDM
+
                            end do
                         end do
                      end do
                   end do
 
-               theformat = '(' // trim(inttostr(1+range_model)) // '(F5.2,1x))'
+               theformat = '(' // trim(inttostr(1+MS_real_model_count)) // '(F5.2,1x))'
                call write_tab1(path_tab1_dat)
 
-               theformat = '(' // trim(inttostr(range_model)) // '(F5.2,1x,"&",1x),F5.2,1x,"\\")'
+               theformat = '(' // trim(inttostr(MS_real_model_count)) // '(F5.2,1x,"&",1x),F5.2,1x,"\\")'
                call write_tab1(path_tab1_tex)
 
-               !call write_tab1b
-
+               deallocate(tab1_mu)
             end subroutine
 
-
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
             subroutine write_tab1(path_table)
                character(len) path_table ; integer i
@@ -96,41 +73,13 @@
 
                   open(unit_1,file=path_table,status='replace')
                         if (theformat=='') theformat='*'
-                     write(unit_1,theformat) ( tab1_mu(i,:) , i=1 , range_z)
+                     write(unit_1,theformat) ( tab1_mu(i,:) , i=1 , size(tab1_mu(:,1)) )
 
                   close(unit_1)
 
                end subroutine
 
-
-
-            subroutine write_tab1b
-               integer w,v,k
-
-                  theformat = '(i2,1x,"&",1x,F3.1,1x,"&",1x,F4.1,' // trim(inttostr(range_z)) // &
-                     '(1x,"&",1x,F5.2),1x,"\\")'
-
-                  unit_1 = random_unit()
-
-                  open(unit_1,file=path_tab1_tex,status='replace')
-                        if (theformat=='') theformat='*'
-
-                  do w=1,range_w
-                     do v=1,range_omega_v
-                        do k=1,range_omega_k
-
-                              j = 1 + k + range_omega_k*(v-1) + range_omega_k*range_omega_v*(w-1)
-                           write(unit_1,theformat) int(value_w(w)) , value_omega_v(v) , value_omega_k(k) , &
-                              tab1_mu(:,j)
-
-                           end do
-                        end do
-                     end do
-
-                     close(unit_1)
-
-               end subroutine
-
-
+         !=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=%=!
 
    end module
+!=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- truncated=136-=1

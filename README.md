@@ -13,6 +13,8 @@ DOI: 10.1093/mnrasl/slaa167
 
 Schema in detail:
 
+The program requires the GNUplot software.
+
 The multi-platform Fortran.f95 program COSMOD has the clear-code interface (file COSMOD Citadel) 
 for working the scripts (file COSMOD_Scripts) 
 with following plot the figures (file COSMOD_Graphics.f95) and tables (COSMOD_Tables).
